@@ -1,1 +1,2 @@
-Display some internal structures of X86 processors. Mainly used for hobbyist OS development.
+* Introduction
+This is a cross-platform desktop app with [[https://www.fltk.org/][FLTK]] to display some internal structures of X86 processors. It is mainly used for learning OS or hobbyist OS development.
