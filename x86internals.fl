@@ -5,26 +5,30 @@ code_name {.cxx}
 decl {\#include "types.h"} {public global
 }
 
-class X86Internals {selected
+class X86Internals {open
 } {
   Function {make_main_window()} {open
   } {
     Fl_Window {} {open
-      xywh {394 288 1040 720} type Double visible
+      xywh {191 278 1040 720} type Double visible
     } {
       Fl_Input hex_input {
         label HexInput
-        xywh {230 497 180 28}
+        xywh {370 502 180 28}
       }
       Fl_Button {} {
         label Submit
         callback Button_CB
-        xywh {420 495 70 30}
+        xywh {585 500 70 30}
       }
       Fl_Text_Display internal_struct {
         label {Global Descriptor Table}
         xywh {25 35 990 430}
       }
+      Fl_Choice x86_structs {
+        callback Choice_CB open selected
+        xywh {145 500 140 30} down_box BORDER_BOX
+      } {}
     }
   }
 }
