@@ -81,6 +81,23 @@ void Choice_CB(Fl_Choice *w, void *user_data) {
   int selected_index = w->value();
   std::cout << "Selected: " << selected_text << " (Index: " << selected_index
             << ")" << std::endl;
+  std::string title;
+  switch (selected_index) {
+  case 0:
+    title = "Global Descriptor Table";
+    break;
+  case 1:
+    title = "Local Descriptor Table";
+    break;
+  case 2:
+    title = "Interrupt Descriptor Table";
+    break;
+  default:
+    title = "Unknown";
+    break;
+  }
+  x86internals.title_box->copy_label(title.c_str());
+  x86internals.title_box->redraw_label();
 }
 
 int main(int argc, char **argv) {

@@ -9,8 +9,9 @@ class X86Internals {open
 } {
   Function {make_main_window()} {open
   } {
-    Fl_Window {} {open
-      xywh {191 278 1040 720} type Double visible
+    Fl_Window {} {
+      label {X86 Internals} open selected
+      xywh {191 278 1040 720} type Double labeltype NORMAL_LABEL visible
     } {
       Fl_Input hex_input {
         label HexInput
@@ -22,13 +23,15 @@ class X86Internals {open
         xywh {585 500 70 30}
       }
       Fl_Text_Display internal_struct {
-        label {Global Descriptor Table}
-        xywh {25 35 990 430}
+        xywh {25 35 990 430} labeltype NO_LABEL
       }
       Fl_Choice x86_structs {
-        callback Choice_CB open selected
+        callback Choice_CB open
         xywh {145 500 140 30} down_box BORDER_BOX
       } {}
+      Fl_Box title_box {
+        xywh {25 0 990 35}
+      }
     }
   }
 }
