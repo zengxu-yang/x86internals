@@ -54,17 +54,24 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
 }
 
 void Button_CB(Fl_Button *w, void *user_data) {
-  std::cout << "Button event" << std::endl;
   const char *hex = x86internals.hex_input->value();
 
-  // Parse input into GDT
-  auto entries = parse_gdt_from_hex(hex);
-  std::string displayText = format_gdt_entries(entries);
+  std::string displayText;
+  switch (x86internals.x86_structs->value()) {
+  case 0: {
+    // Parse input into GDT
+    auto entries = parse_gdt_from_hex(hex);
+    displayText = format_gdt_entries(entries);
+    break;
+  }
+  default:
+    displayText = "Not implemented yet.";
+    break;
+  }
 
   // Replace buffer with parsed GDT text
   Fl_Text_Buffer *old_buf = x86internals.internal_struct->buffer();
   if (old_buf != nullptr) {
-    std::cout << "Non-empty buffer!" << std::endl;
     x86internals.internal_struct->buffer(nullptr); // disconnect safely
     delete old_buf;
   }
@@ -79,24 +86,16 @@ void Choice_CB(Fl_Choice *w, void *user_data) {
   std::cout << "Choice event" << std::endl;
   const char *selected_text = w->text();
   int selected_index = w->value();
+#if DEBUG
   std::cout << "Selected: " << selected_text << " (Index: " << selected_index
             << ")" << std::endl;
-  std::string title;
-  switch (selected_index) {
-  case 0:
-    title = "Global Descriptor Table";
-    break;
-  case 1:
-    title = "Local Descriptor Table";
-    break;
-  case 2:
-    title = "Interrupt Descriptor Table";
-    break;
-  default:
-    title = "Unknown";
-    break;
-  }
-  x86internals.title_box->copy_label(title.c_str());
+#endif
+  std::vector<std::string> titles{"Global Descriptor Table",
+                                  "Local Descriptor Table",
+                                  "Interrupt Descriptor Table"};
+
+  // Update the displayed text label.
+  x86internals.title_box->copy_label(titles[selected_index].c_str());
   x86internals.title_box->redraw_label();
 }
 
