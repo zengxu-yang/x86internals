@@ -8,6 +8,18 @@
 
 X86Internals x86internals;
 
+bool isValidHex(const std::string &str) {
+  if (str.empty()) {
+    return false; // An empty string is not a valid hex number
+  }
+  for (char c : str) {
+    if (!std::isxdigit(static_cast<unsigned char>(c))) {
+      return false; // Character is not a hexadecimal digit
+    }
+  }
+  return true; // All characters are valid hexadecimal digits
+}
+
 std::vector<GDTEntry> parse_gdt_from_hex(const std::string &hex) {
   std::vector<GDTEntry> entries;
 
@@ -16,6 +28,11 @@ std::vector<GDTEntry> parse_gdt_from_hex(const std::string &hex) {
   for (char c : hex) {
     if (!isspace(c))
       clean += c;
+  }
+
+  // Must be a valid hex num.
+  if (!isValidHex(hex)) {
+    return entries;
   }
 
   // Must be a multiple of 16 hex chars (8 bytes per GDT entry)
@@ -61,7 +78,10 @@ void Button_CB(Fl_Button *w, void *user_data) {
   case 0: {
     // Parse input into GDT
     auto entries = parse_gdt_from_hex(hex);
-    displayText = format_gdt_entries(entries);
+    if (entries.empty())
+      displayText = "Invalid input. Please check it.";
+    else
+      displayText = format_gdt_entries(entries);
     break;
   }
   default:
