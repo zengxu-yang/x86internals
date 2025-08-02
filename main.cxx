@@ -67,11 +67,33 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
   std::ostringstream out;
   int i = 0;
   for (const auto &e : entries) {
+    int len = e.limit + 1;
+    if (e.access.bits.G == 1)
+      len *= 4096;
+    std::string len_dec;
+    int tmp, len2 = len;
+    if (tmp = len2 / (1024 * 1024 * 1024)) {
+      len_dec += std::to_string(tmp) + " GB ";
+      len2 %= (1024 * 1024 * 1024);
+    }
+    if (tmp = len2 / (1024 * 1024)) {
+      len_dec += std::to_string(tmp) + " MB ";
+      len2 %= (1024 * 1024);
+    }
+    if (tmp = len2 / (1024)) {
+      len_dec += std::to_string(tmp) + " KB ";
+      len2 %= (1024);
+    }
+    if (len2) {
+      len_dec += std::to_string(len2) + " B ";
+    }
+
     out << "Entry " << i++ << ": "
         << "Base=0x" << std::hex << std::setw(8) << std::setfill('0') << e.base
         << ", Limit=0x" << std::setw(5) << e.limit << ", Access=0x"
         << std::setw(2) << static_cast<int>(e.access.value) << ", Flags=0x"
-        << static_cast<int>(e.flags.value) << "\n";
+        << static_cast<int>(e.flags.value) << "\n"
+        << "Segment Length=0x" << len << " ( " << len_dec << ")\n ";
   }
   return out.str();
 }
