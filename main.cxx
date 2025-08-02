@@ -24,14 +24,20 @@ std::vector<GDTEntry> parse_gdt_from_hex(const std::string &hex) {
   std::vector<GDTEntry> entries;
 
   // Remove any whitespace
-  std::string clean;
+  std::string trimmed, clean;
   for (char c : hex) {
     if (!isspace(c))
-      clean += c;
+      trimmed += c;
   }
 
+  // Remove "0x" or "0X"
+  if (trimmed[0] == '0' && std::tolower(trimmed[1]) == 'x')
+    clean = trimmed.substr(2);
+  else
+    clean = trimmed;
+
   // Must be a valid hex num.
-  if (!isValidHex(hex)) {
+  if (!isValidHex(clean)) {
     return entries;
   }
 
@@ -48,8 +54,8 @@ std::vector<GDTEntry> parse_gdt_from_hex(const std::string &hex) {
     GDTEntry entry;
     entry.limit = (raw & 0xFFFF) | (((raw >> 48) & 0xF) << 16);
     entry.base = ((raw >> 16) & 0xFFFFFF) | (((raw >> 56) & 0xFF) << 24);
-    entry.access = (raw >> 40) & 0xFF;
-    entry.flags = (raw >> 52) & 0xF;
+    entry.access.value = (raw >> 40) & 0xFF;
+    entry.flags.value = (raw >> 52) & 0xF;
 
     entries.push_back(entry);
   }
@@ -64,8 +70,8 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
     out << "Entry " << i++ << ": "
         << "Base=0x" << std::hex << std::setw(8) << std::setfill('0') << e.base
         << ", Limit=0x" << std::setw(5) << e.limit << ", Access=0x"
-        << std::setw(2) << static_cast<int>(e.access) << ", Flags=0x"
-        << static_cast<int>(e.flags) << "\n";
+        << std::setw(2) << static_cast<int>(e.access.value) << ", Flags=0x"
+        << static_cast<int>(e.flags.value) << "\n";
   }
   return out.str();
 }
@@ -131,6 +137,7 @@ int main(int argc, char **argv) {
   x86internals.x86_structs->add("GDT");
   x86internals.x86_structs->add("LDT");
   x86internals.x86_structs->add("IDT");
+  x86internals.x86_structs->add("TSS");
   // Show the window
   main_window->show(argc, argv);
 
