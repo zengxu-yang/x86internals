@@ -70,7 +70,7 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
     int len = e.limit + 1;
     if (e.flags.bits.G == 1)
       len *= 4096;
-    std::string len_dec, seg_type;
+    std::string len_dec, seg_type, seg_common;
     int tmp, len2 = len;
     if (tmp = len2 / (1024 * 1024 * 1024)) {
       len_dec += std::to_string(tmp) + " GB ";
@@ -88,13 +88,28 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
       len_dec += std::to_string(len2) + " B ";
     }
 
+    seg_common += ": Ring " + std::to_string(e.access.bits.DPL);
+    if (e.access.bits.P)
+      seg_common += " In Memory";
+    else
+      seg_common += " Not in Memory";
+
     if (!e.access.bits.S)
-      seg_type = "System";
+      seg_type = "System: " + seg_common;
     else {
-      if (e.access.bits.TYPE & 0x8)
-        seg_type = "Code";
-      else
-        seg_type = "Data";
+      if (e.access.bits.TYPE & 0x8) {
+        seg_type = "Code: " + seg_common;
+        if (e.access.bits.TYPE & 0x2)
+          seg_type += ": Readable";
+        if (e.access.bits.TYPE & 0x1)
+          seg_type += ": Accessed";
+      } else {
+        seg_type = "Data: " + seg_common;
+        if (e.access.bits.TYPE & 0x2)
+          seg_type += ": Writable";
+        if (e.access.bits.TYPE & 0x1)
+          seg_type += ": Accessed";
+      }
     }
 
     out << "Entry " << i++ << ": "
