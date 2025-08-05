@@ -94,9 +94,14 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
     else
       seg_common += " Not in Memory";
 
-    if (!e.access.bits.S)
-      seg_type = "System: " + seg_common;
-    else {
+    if (!e.access.bits.S) {
+      if (e.access.bits.TYPE & 0x9 && e.access.bits.TYPE | 0x4)
+        seg_type = "TSS: " + seg_common;
+      else if (e.access.bits.TYPE == 0x2)
+        seg_type = "LDT: " + seg_common;
+      else
+        seg_type = "System: " + seg_common;
+    } else {
       if (e.access.bits.TYPE & 0x8) {
         seg_type = "Code: " + seg_common;
         if (e.access.bits.TYPE & 0x2)
@@ -123,6 +128,79 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
   return out.str();
 }
 
+std::vector<IDTEntry> parse_idt_from_hex(const std::string &hex) {
+  std::vector<IDTEntry> entries;
+
+  // Remove any whitespace
+  std::string trimmed, clean;
+  for (char c : hex) {
+    if (!isspace(c))
+      trimmed += c;
+  }
+
+  // Remove "0x" or "0X"
+  if (trimmed[0] == '0' && std::tolower(trimmed[1]) == 'x')
+    clean = trimmed.substr(2);
+  else
+    clean = trimmed;
+
+  // Must be a valid hex num.
+  if (!isValidHex(clean)) {
+    return entries;
+  }
+
+  // Must be a multiple of 16 hex chars (8 bytes per IDT entry)
+  if (clean.size() % 16 != 0) {
+    std::cerr << "Invalid hex length for IDT entries.\n";
+    return entries;
+  }
+
+  for (size_t i = 0; i < clean.size(); i += 16) {
+    std::string chunk = clean.substr(i, 16);
+    uint64_t raw = std::stoull(chunk, nullptr, 16);
+    // Not a valid IDT entry.
+    if (((raw >> 40) & 0x1E) != 0xE)
+      return entries;
+
+    IDTEntry entry;
+    entry.offset = (raw & 0xFFFF) | (((raw >> 48) & 0xFFFF) << 16);
+    entry.segment = (raw >> 16) & 0xFFFF;
+    entry.access.value = (raw >> 40) & 0xFF;
+
+    entries.push_back(entry);
+  }
+
+  return entries;
+}
+
+std::string format_idt_entries(const std::vector<IDTEntry> &entries) {
+  std::ostringstream out;
+  int i = 0;
+  for (const auto &e : entries) {
+    std::string len_dec, seg_type, seg_common;
+    seg_common += ": Ring " + std::to_string(e.access.bits.DPL);
+    if (e.access.bits.P)
+      seg_common += " In Memory";
+    else
+      seg_common += " Not in Memory";
+
+    if (e.access.bits.TYPE == 0xE)
+      seg_type = "Interrupt Gate: " + seg_common;
+    else if (e.access.bits.TYPE == 0xF)
+      seg_type = "Trap Gate: " + seg_common;
+    else if (e.access.bits.TYPE == 0x5)
+      seg_type = "Task Gate: " + seg_common;
+
+    out << "Entry " << i++ << ": "
+        << "Offset=0x" << std::hex << std::setw(8) << std::setfill('0')
+        << e.offset << ", Segment=0x" << std::setw(5) << e.segment
+        << ", Access=0x" << std::setw(2) << static_cast<int>(e.access.value)
+        << "\n"
+        << "Type: " << seg_type;
+  }
+  return out.str();
+}
+
 void Button_CB(Fl_Button *w, void *user_data) {
   const char *hex = x86internals.hex_input->value();
 
@@ -135,6 +213,15 @@ void Button_CB(Fl_Button *w, void *user_data) {
       displayText = "Invalid input. Please check it.";
     else
       displayText = format_gdt_entries(entries);
+    break;
+  }
+  case 2: {
+    // Parse input into IDT
+    auto entries = parse_idt_from_hex(hex);
+    if (entries.empty())
+      displayText = "Invalid input. Please check it.";
+    else
+      displayText = format_idt_entries(entries);
     break;
   }
   default:

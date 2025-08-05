@@ -39,3 +39,22 @@ struct GDTEntry {
     uint8_t value;
   } flags;
 };
+
+struct IDTEntry {
+  uint32_t offset;
+  uint16_t segment;
+  union {
+    struct {
+#ifdef __LITTLE_ENDIAN_BITFIELD
+      uint8_t TYPE : 5;
+      uint8_t DPL : 2;
+      uint8_t P : 1;
+#else
+      uint8_t P : 1;
+      uint8_t DPL : 2;
+      uint8_t TYPE : 5;
+#endif
+    } bits;
+    uint8_t value;
+  } access;
+};
