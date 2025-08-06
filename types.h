@@ -58,3 +58,31 @@ struct IDTEntry {
     uint8_t value;
   } access;
 };
+
+struct PTEntry {
+  uint32_t address;
+  union {
+    struct {
+#ifdef __LITTLE_ENDIAN_BITFIELD
+      uint16_t P : 1;
+      uint16_t RW : 1;
+      uint16_t US : 1;
+      uint16_t res2 : 2;
+      uint16_t A : 1;
+      uint16_t D : 1;
+      uint16_t res1 : 2;
+      uint16_t AVL : 4;
+#else
+      uint16_t AVL : 4;
+      uint16_t res1 : 2;
+      uint16_t D : 1;
+      uint16_t A : 1;
+      uint16_t res2 : 2;
+      uint16_t US : 1;
+      uint16_t RW : 1;
+      uint8_t P : 1;
+#endif
+    } bits;
+    uint8_t value;
+  } access;
+};

@@ -201,6 +201,86 @@ std::string format_idt_entries(const std::vector<IDTEntry> &entries) {
   return out.str();
 }
 
+std::vector<PTEntry> parse_pt_from_hex(const std::string &hex) {
+  std::vector<PTEntry> entries;
+
+  // Remove any whitespace
+  std::string trimmed, clean;
+  for (char c : hex) {
+    if (!isspace(c))
+      trimmed += c;
+  }
+
+  // Remove "0x" or "0X"
+  if (trimmed[0] == '0' && std::tolower(trimmed[1]) == 'x')
+    clean = trimmed.substr(2);
+  else
+    clean = trimmed;
+
+  // Must be a valid hex num.
+  if (!isValidHex(clean)) {
+    return entries;
+  }
+
+  // Must be a multiple of 8 hex chars (4 bytes per PT entry)
+  if (clean.size() % 8 != 0) {
+    std::cerr << "Invalid hex length for PT entries.\n";
+    return entries;
+  }
+
+  for (size_t i = 0; i < clean.size(); i += 8) {
+    std::string chunk = clean.substr(i, 8);
+    uint64_t raw = std::stoul(chunk, nullptr, 16);
+
+    PTEntry entry;
+    entry.address = ((raw >> 12) & 0xFFFFF) << 12;
+    entry.access.value = raw & 0xFFF;
+
+    entries.push_back(entry);
+  }
+
+  return entries;
+}
+
+std::string format_pt_entries(const std::vector<PTEntry> &entries) {
+  std::ostringstream out;
+  int i = 0;
+  for (const auto &e : entries) {
+    std::string pt_flags;
+    if (e.access.bits.P)
+      pt_flags += " Present: ";
+    else
+      pt_flags += " Not Present: ";
+
+    if (e.access.bits.RW)
+      pt_flags += "Writable: ";
+    else
+      pt_flags += "Read only: ";
+
+    if (e.access.bits.US)
+      pt_flags += "User: ";
+    else
+      pt_flags += "Kernel: ";
+
+    if (e.access.bits.A)
+      pt_flags += "Accessed: ";
+    else
+      pt_flags += "Not accessed: ";
+
+    if (e.access.bits.D)
+      pt_flags += "Dirty: ";
+    else
+      pt_flags += "Clean: ";
+
+    out << "Entry " << i++ << ": "
+        << "Address=0x" << std::hex << std::setw(8) << std::setfill('0')
+        << e.address << ", Access=0x" << std::setw(2)
+        << static_cast<int>(e.access.value) << "\n"
+        << "Properties: " << pt_flags;
+  }
+  return out.str();
+}
+
 void Button_CB(Fl_Button *w, void *user_data) {
   const char *hex = x86internals.hex_input->value();
 
@@ -222,6 +302,15 @@ void Button_CB(Fl_Button *w, void *user_data) {
       displayText = "Invalid input. Please check it.";
     else
       displayText = format_idt_entries(entries);
+    break;
+  }
+  case 4: {
+    // Parse input into PT
+    auto entries = parse_pt_from_hex(hex);
+    if (entries.empty())
+      displayText = "Invalid input. Please check it.";
+    else
+      displayText = format_pt_entries(entries);
     break;
   }
   default:
@@ -250,9 +339,9 @@ void Choice_CB(Fl_Choice *w, void *user_data) {
   std::cout << "Selected: " << selected_text << " (Index: " << selected_index
             << ")" << std::endl;
 #endif
-  std::vector<std::string> titles{"Global Descriptor Table",
-                                  "Local Descriptor Table",
-                                  "Interrupt Descriptor Table"};
+  std::vector<std::string> titles{
+      "Global Descriptor Table", "Local Descriptor Table",
+      "Interrupt Descriptor Table", "TSS", "Page Table"};
 
   // Update the displayed text label.
   x86internals.title_box->copy_label(titles[selected_index].c_str());
@@ -272,6 +361,7 @@ int main(int argc, char **argv) {
   x86internals.x86_structs->add("LDT");
   x86internals.x86_structs->add("IDT");
   x86internals.x86_structs->add("TSS");
+  x86internals.x86_structs->add("PT");
   // Show the window
   main_window->show(argc, argv);
 
