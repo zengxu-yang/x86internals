@@ -67,11 +67,11 @@ std::string format_gdt_entries(const std::vector<GDTEntry> &entries) {
   std::ostringstream out;
   int i = 0;
   for (const auto &e : entries) {
-    int len = e.limit + 1;
+    long long len = e.limit + 1;
     if (e.flags.bits.G == 1)
       len *= 4096;
     std::string len_dec, seg_type, seg_common;
-    int tmp, len2 = len;
+    long long tmp, len2 = len;
     if (tmp = len2 / (1024 * 1024 * 1024)) {
       len_dec += std::to_string(tmp) + " GB ";
       len2 %= (1024 * 1024 * 1024);
